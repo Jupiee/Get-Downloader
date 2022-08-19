@@ -7,7 +7,8 @@ class Getcomics:
 
     def __init__(self):
 
-        self.test= []
+        self.temp= []
+        self.links= []
 
         try:
             req= requests.get("https://getcomics.info")
@@ -25,23 +26,34 @@ class Getcomics:
             req= requests.get(f"https://getcomics.info/?s={query}").content
             titles= BeautifulSoup(req, "html.parser").find_all("h1", class_= "post-title")
             for count,title in enumerate(titles,1):
+                self.temp.append(title.find('a')["href"])
                 print(f"{count}. {title.find('a').text}")
-                self.linkcapture(title)
+            self.link_substitute()
 
         except:
             print("site is not working")
             exit()
             os.system("exit")
 
-    def linkcapture(self,title):
+    def link_substitute(self):
 
-        "Scrapes download links for the comics and store it."
+        "Sends multiple requests and makes it somewhat faster for now."
 
         try:
-            req= requests.get(title.find('a')["href"]).content
-            link= BeautifulSoup(req, "html.parser").find("a", class_= "aio-red")["href"]
-
-            self.test.append(link)
+            with requests.Session() as session:
+                for url in self.temp:
+                    self.download_links(url,session)
 
         except:
             pass
+
+    def download_links(self,url,session):
+
+        "Scrapes download links for the comics and store it."
+
+        with session.get(url) as response:
+            result= response.content
+            link= BeautifulSoup(result, "html.parser").find("a", class_= "aio-red")["href"]
+            self.links.append(link)
+
+
